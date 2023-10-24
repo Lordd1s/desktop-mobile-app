@@ -1,40 +1,44 @@
-import tkinter as tk
-from tkinter import messagebox
-from datetime import datetime
-from datetime import time as dt_time
-import time
-import threading
+import sys
+from PyQt5.QtWidgets import QApplication, QMainWindow, QLabel, QLineEdit, QPushButton, QMessageBox
+from PyQt5.QtCore import QTimer, QTime
 
+class AlarmClock(QMainWindow):
+    def __init__(self):
+        super().__init__()
 
-def alarm():
-    messagebox.showinfo("Будильник", "Пора вставать!")
-    root.destroy()
+        self.setWindowTitle("Будильник")
+        self.setGeometry(100, 100, 300, 150)
 
+        self.label = QLabel("Установите время будильника (HH:MM):", self)
+        self.label.setGeometry(10, 10, 280, 30)
 
-def set_alarm():
-    alarm_time = entry.get()
-    alarm_time_obj = dt_time(int(alarm_time.split(':')[0]), int(alarm_time.split(':')[1]))
-    current_time = datetime.now().time()
+        self.entry = QLineEdit(self)
+        self.entry.setGeometry(10, 40, 100, 30)
 
-    if alarm_time_obj <= current_time:
-        messagebox.showerror("Ошибка", "Выберите будущее время!")
-    else:
-        alarm_datetime = datetime.combine(datetime.today(), alarm_time_obj)
-        time_difference = (alarm_datetime - datetime.now()).total_seconds()
-        t = threading.Timer(time_difference, alarm)
-        t.start()
-        print("Будильник поставлен!")
+        self.set_button = QPushButton("Установить", self)
+        self.set_button.setGeometry(120, 40, 80, 30)
+        self.set_button.clicked.connect(self.set_alarm)
 
+        self.timer = QTimer(self)
+        self.timer.timeout.connect(self.alarm)
 
-root = tk.Tk()
-root.title("Будильник")
+    def set_alarm(self):
+        alarm_time = self.entry.text()
+        current_time = QTime.currentTime()
+        alarm_time_obj = QTime.fromString(alarm_time, "HH:mm")
 
-label = tk.Label(root, text="Установите время будильника (HH:MM):")
-label.pack()
-entry = tk.Entry(root)
-entry.pack()
-set_button = tk.Button(root, text="Установить", command=set_alarm)
-set_button.pack()
+        if alarm_time_obj <= current_time:
+            QMessageBox.critical(self, "Ошибка", "Выберите будущее время!")
+        else:
+            time_difference = current_time.msecsTo(alarm_time_obj)
+            self.timer.start(time_difference)
 
+    def alarm(self):
+        self.timer.stop()
+        QMessageBox.information(self, "Будильник", "Пора вставать!")
 
-root.mainloop()
+if __name__ == "__main__":
+    app = QApplication(sys.argv)
+    window = AlarmClock()
+    window.show()
+    sys.exit(app.exec_())
